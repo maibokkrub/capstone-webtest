@@ -14,7 +14,7 @@ import pandas as pd
 # starttransfer: The time, in seconds, it took from the start until the first byte was just about to be transferred. This includes time_pretransfer and also the time the server needed to calculate the result.
 # total: The total time, in seconds, that the full operation lasted. The time will be displayed with millisecond resolution.
 
-MAX_ITER = 1 
+MAX_ITER = 100
 targets = {'dns':'https://dns.taa.computer', 'anycast':'https://anycast.taa.computer'}
 files  = ['sl-min.js', 'medium.js', 'large.txt']
 
