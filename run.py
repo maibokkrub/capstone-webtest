@@ -1,3 +1,6 @@
+import os
+import json
+import requests
 import pandas as pd
 
 # Brief info found at
@@ -11,23 +14,39 @@ import pandas as pd
 # starttransfer: The time, in seconds, it took from the start until the first byte was just about to be transferred. This includes time_pretransfer and also the time the server needed to calculate the result.
 # total: The total time, in seconds, that the full operation lasted. The time will be displayed with millisecond resolution.
 
-columns = [ 
+MAX_ITER = 1 
+targets = {'dns':'https://dns.taa.computer', 'anycast':'https://anycast.taa.computer'}
+files  = ['sl-min.js', 'medium.js', 'large.txt']
+
+columns = [
     "time_namelookup", "time_connect", "time_appconnect",
     "time_pretransfer", "time_redirect", "time_total"
 ]
 
-df = pd.read_csv('output.csv', names=columns) 
+def process(filename, _method, testedfile):
+    df = pd.read_csv(filename, names=columns)
+    df['location'] = os.getenv('location')
+    df['provider'] = os.getenv('provider')
+    df['method'] = _method
+    df['filename'] = testedfile
+    return df
 
-df = df.drop(columns=['time_redirect', 'time_appconnect'])
+def send_data(df):
+    requests.post(url='https://meem.peem.in/capstone/store-json/',data=df.to_json())
+    print("Request Sent!")
 
-# print("Data")
-print(df)
+def experiment(_method, filename): 
+    out_name = _method + '_' + filename.replace('.', '-') + '.csv'
+    url = targets[_method] + '/' + filename
+    for i in range(MAX_ITER):
+        os.system('curl '+ url + r' -H "Cache-Control: no-cache, no-store, must-revalidate" '+
+            r'-H "Pragma: no-cache" -H "Expires: 0" -w "@curl-format.txt" ' +
+            r'-o /dev/null -s >> ' + out_name
+        )
+    result = process(out_name, _method, filename)
+    send_data(result)
 
-print("\nAverage of Matcies")
-print(df.mean())
-
-print("\nMin")
-print(df.min())
-
-print("\nMax")
-print(df.max())
+for target in targets.keys(): 
+    for fname in files: 
+        print(target,fname)
+        experiment(target, fname)
